@@ -17,7 +17,17 @@
     "setup:browser": "node src/browser/setup-profile.mjs",
     "dashboard": "node dashboard/server.mjs"
   },
-  "keywords": ["genie", "jellyjelly", "openclaw", "agentic", "social-media"],
+  "keywords": [
+    "genie",
+    "jellyjelly",
+    "openclaw",
+    "agentic",
+    "social-media"
+  ],
   "author": "George Trushevskiy",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@playwright/mcp": "^0.0.70",
+    "playwright": "^1.59.1"
+  }
 }

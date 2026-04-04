@@ -36,19 +36,27 @@ Agentic social media agent for MischiefClaw hackathon at Betaworks NYC. Built on
 
 ## 1. Vision
 
-**JellyJelly = the mouth. OpenClaw = the brain. Your screen = the proof.**
+**Your computer is possessed. And you asked for it.**
 
-You post a JellyJelly video and say "Genie" anywhere in it. That's the trigger. Genie is a continuous server watching the firehose. When it hears its name, it:
+You record a 30-second JellyJelly video. You say "Genie, organize an event for AI founders in NYC." You put your phone down.
+
+Then your screen comes alive. Chrome opens BY ITSELF. It navigates to LinkedIn, searches for AI founders in New York, sends 8 connection requests with personalized notes referencing each person's recent posts. Tab switches to Gmail — composes personalized invitations to 5 people whose emails Apollo found, each one mentioning their work. Tab switches to Twitter — posts a tweet announcing the event with a link to the site it already deployed 20 seconds ago. Telegram buzzes with a full report: site URL, 8 LinkedIn requests sent, 5 emails delivered, tweet live.
+
+You didn't touch your keyboard. Your computer just did all of that from a video clip.
+
+**The site deploy is step 1 of a 5-step chain. The browser cascade is the main event.**
+
+Genie is a continuous server watching the JellyJelly firehose. When it hears its name, it:
 
 1. **Listens** — pulls the full transcript, reconstructs what you said
 2. **Interprets** — doesn't just extract intent, builds a full **proposal/brief** from your rambling
 3. **Strategizes** — figures out what you SHOULD do, not just what you asked for
-4. **Acts** — builds the site, opens Chrome on your machine, messages people on LinkedIn, sends Gmail, deploys to Vercel
+4. **Acts** — deploys a site in 9 seconds, THEN opens Chrome and does a visible CASCADE: LinkedIn outreach, Gmail sends, Twitter posts, profile updates — all on YOUR screen, in YOUR logged-in accounts, while you watch
 5. **Reports** — sends you a Telegram message with everything it did. Screenshots, URLs, receipts.
 
 **You cannot message Genie. Genie messages you.** The only input is your JellyJelly videos. You speak it into existence, Genie catches it, does it, and sends you the results.
 
-No Convex. No Convos. No chat interface where you type. JellyJelly is the input. Telegram is the output. Your local machine's Chrome browser is the hands.
+No Convex. No Convos. No chat interface where you type. JellyJelly is the input. Telegram is the output. Your local machine's Chrome browser is the hands — and the hands are VISIBLE. You watch them work.
 
 **Iqram (JellyJelly founder) described this exact thing today on his own platform:**
 
@@ -148,14 +156,20 @@ TRANSCRIPT INTERPRETER
          |
          v
 EXECUTION ENGINE
-  → for each wish in priority order:
-     ├── BUILD → generate site → deploy Vercel → screenshot → push GitHub
-     ├── OUTREACH → open Chrome → navigate LinkedIn → send connection request
-     │           → or open Gmail → compose and send email
-     ├── PROMOTE → open Chrome → post on Twitter/LinkedIn
-     ├── RESEARCH → Apollo enrich + web search → compile report
-     ├── CONNECT → find person → draft intro → send via Gmail/LinkedIn
-     └── REMIND → store locally → Telegram reminder later
+  → Step 1 (background, fast): BUILD if needed
+     └── generate site → deploy Vercel (9s) → screenshot → push GitHub
+  → Step 2 (THE MAIN EVENT — visible browser cascade):
+     Chrome opens headed. Audience sees everything.
+     ├── RESEARCH → Apollo enrich targets → get emails, LinkedIn URLs
+     ├── LINKEDIN → Chrome navigates to each profile → sends connection
+     │              requests with personalized notes (slowMo: visible)
+     ├── GMAIL → Chrome opens mail.google.com → composes personalized
+     │           emails from YOUR account → hits Send (visible)
+     ├── TWITTER → Chrome opens x.com → composes tweet → posts (visible)
+     ├── PROFILE → Chrome updates your LinkedIn headline/bio if relevant
+     └── Each action is a new tab. Audience follows along in real time.
+  → Step 3: REPORT
+     └── Telegram message with full receipts
          |
          v
 TELEGRAM REPORT
@@ -346,17 +360,48 @@ Be thorough. Be opinionated. The user is rambling — your job is to make sense 
 
 ### What It Does
 
-The Strategy Layer is what makes Genie more than a command executor. It doesn't just do what you said — it thinks about what you SHOULD do.
+The Strategy Layer is what makes Genie more than a command executor. It doesn't just do what you said — it thinks about what you SHOULD do. And then it DOES those things. No confirmation. Your browser starts moving.
 
-Examples:
+### Proactive Outreach: The Killer Feature
 
-| You said | Genie also does (proactively) |
+When Genie hears a wish, it automatically identifies WHO should know about it and reaches out on your behalf:
+
+| You said | Genie also does (proactively, in your browser) |
 |----------|------------------------------|
-| "Build me a landing page" | Also generates social media assets, OG image, favicon |
-| "Reach out to that investor" | Also researches the investor's portfolio, finds mutual connections |
-| "Post about my new project" | Also identifies the best time to post, suggests A/B tweet variants |
-| "I need a portfolio site" | Also pulls your GitHub repos and JellyJelly clips to populate it |
-| Just shares an idea, no specific ask | Genie proposes what could be built from the idea and estimates impact |
+| "Organize an event for AI founders" | Also finds 15 AI founders on JellyJelly + LinkedIn, sends invitations via Gmail, posts the event on Twitter |
+| "Build me a landing page" | Also finds JellyJelly power users in your niche, sends them connection requests on LinkedIn mentioning the new site |
+| "Reach out to that investor" | Also researches the investor's portfolio on Apollo, finds mutual connections on LinkedIn, drafts a warm intro email in Gmail, sends it |
+| "Post about my new project" | Also identifies JellyJelly creators who post about similar topics, sends them personalized DMs/emails |
+| "I need a portfolio site" | Also updates your LinkedIn headline to match, tweets the launch, emails 5 contacts who should see it |
+| Just shares an idea, no specific ask | Genie finds relevant people, builds something, and starts outreach — all visible in Chrome |
+
+### JellyJelly Power User Discovery
+
+Genie uses the JellyJelly search API to find power users relevant to ANY wish:
+
+```javascript
+// For any wish, find relevant JellyJelly creators
+async function findJellyJellyPowerUsers(topic) {
+  // 1. Search firehose for creators posting about this topic
+  const clips = await searchJellyJelly({ sort_by: 'likes', page_size: 50 });
+  
+  // 2. Filter by topic relevance (LLM scores each transcript)
+  const relevant = await scoreRelevance(clips, topic);
+  
+  // 3. Extract unique creators with engagement stats
+  const creators = extractCreators(relevant); // username, followers, engagement
+  
+  // 4. Apollo enrich each: get email, LinkedIn, company
+  const enriched = await Promise.all(creators.map(c => apolloEnrich(c)));
+  
+  // 5. Return targets for browser outreach
+  return enriched; // { name, email, linkedInUrl, jellyContent, personalNote }
+}
+```
+
+This means every wish triggers a discovery cascade:
+- **"Genie, launch my podcast"** -> Finds 10 JellyJelly creators who talk about podcasts -> sends LinkedIn requests + emails mentioning their content -> tweets the launch
+- **"Genie, I need clients for my agency"** -> Finds JellyJelly users who are founders/CEOs -> researches via Apollo -> Chrome sends personalized LinkedIn requests + emails
 
 ### Strategy Prompt Addition
 
@@ -364,41 +409,35 @@ Examples:
 const STRATEGY_ADDITION = `
 STRATEGY RULES:
 - Always think one step ahead of the user
-- If they want a site, think about distribution (how will people find it?)
-- If they want outreach, think about timing and warm-up
-- If they share an idea without a specific ask, propose what could be built
+- For EVERY wish, identify 5-15 people who should know about it
+- Use JellyJelly search to find power users relevant to the wish
+- Use Apollo to enrich each person (email, LinkedIn, company)
+- Execute outreach via headed browser: LinkedIn requests, Gmail sends, Twitter posts
+- If they want a site, the site is step 1. Distribution via browser is steps 2-5.
+- If they want outreach, research the target BEFORE reaching out
+- If they share an idea without a specific ask, find people and start conversations
 - Reference their past wishes and builds for continuity
-- Suggest follow-up actions with timelines
 - Be opinionated — "I'd also do X because Y" not "you could optionally..."
+- The browser cascade IS the value. A site alone is boring. A site + 10 outreach actions = magic.
 `;
 ```
 
 ### Proactive Mode (No Explicit Wish)
 
-Sometimes a user says "Genie" but doesn't have a specific request — they're just sharing a thought or an idea. Genie still acts:
+Sometimes a user says "Genie" but doesn't have a specific request — they're just sharing a thought or an idea. Genie still acts — and the browser still moves:
 
 > "Genie, I was at this event today and everyone was talking about how AI agents are going to change social media. Really cool stuff."
 
-**Genie's Strategy Response:**
-```
-GENIE REPORT
+**What happens on screen:**
+1. Site deploys in 9 seconds (background)
+2. Chrome opens. Navigates to JellyJelly search. Finds 6 creators posting about AI agents.
+3. Tab: Apollo enrichment running (visible in browser DevTools or dedicated tab)
+4. Tab: LinkedIn opens. Sends connection requests to 4 people with notes like "Saw your JellyJelly clip about AI agents — would love to connect"
+5. Tab: Gmail opens. Composes 2 emails to enriched contacts: "Hey [name], saw your take on agentic social media on JellyJelly. Built a quick resource page: [URL]. Thought you'd find it interesting."
+6. Tab: Twitter. Posts: "Just built a resource page on Agentic Social Media after today's event. The future is voice-triggered agents. [URL]"
+7. Telegram buzzes with full report.
 
-You shared a thought about AI agents and social media.
-I turned it into something:
-
-✓ Built a "State of Agentic Social Media" landing page
-  → https://agentic-social-2026.vercel.app
-  → Positions you as a thought leader on this topic
-  
-✓ Drafted a Twitter thread (3 tweets) about the event
-  → Ready to post, attached below
-
-✓ Found 4 people at the event who are also building in this space
-  → LinkedIn profiles attached
-
-Strategy: You were at an event where this was hot. Strike now.
-Post the thread tonight, share the site tomorrow morning.
-```
+**Total time: ~90 seconds. User touched nothing.**
 
 ---
 
@@ -406,22 +445,32 @@ Post the thread tonight, share the site tomorrow morning.
 
 ### What Genie Can Do
 
+**The browser IS Genie's hands.** Browser actions are PRIMARY. Everything else supports them.
+
+#### Tier 1: Browser Actions (The Wow Factor — Visible on Screen)
+
 | Capability | How | Real/Demo |
 |------------|-----|-----------|
-| **Build a website** | Tailwind template + Gemini generation → Vercel deploy (9s) | REAL |
+| **Browse LinkedIn** | Headed Chrome — search people, view profiles, send connection requests with personalized notes, post updates, update your headline | REAL |
+| **Send Gmail** | Headed Chrome — opens Gmail, composes personalized emails from YOUR account, hits Send | REAL |
+| **Post to Twitter/X** | Headed Chrome — composes tweets, posts from your account | REAL |
+| **Post to LinkedIn** | Headed Chrome — composes and publishes posts from your account | REAL |
+| **Browse any website** | Headed Chrome — fill forms, click buttons, extract data, navigate | REAL |
+| **Research a company** | Headed Chrome — Apollo.io + web scraping, all visible | REAL |
+| **JellyJelly power user discovery** | Headed Chrome — search JellyJelly, find top creators, extract profiles | REAL |
+
+#### Tier 2: Background Actions (Fast, Invisible)
+
+| Capability | How | Real/Demo |
+|------------|-----|-----------|
+| **Build a website** | Tailwind template + Gemini generation -> Vercel deploy (9s) | REAL |
 | **Deploy to GitHub** | Git Data API, zero-clone push | REAL |
-| **Take screenshots** | Playwright headless | REAL |
-| **Browse LinkedIn** | Headed Playwright Chrome — navigates, sends connection requests, messages | REAL |
-| **Send Gmail** | Headed Playwright Chrome — opens Gmail, composes, sends from YOUR account | REAL |
-| **Browse any website** | Headed Chrome — can fill forms, click buttons, extract data | REAL |
 | **Research a person** | Apollo.io API enrichment (email, phone, company, title, LinkedIn) | REAL |
-| **Research a company** | Apollo.io + web scraping via headed browser | REAL |
 | **Generate social posts** | LLM copy for Twitter, LinkedIn, general | REAL |
-| **Post to Twitter/X** | Headed Chrome (logged into your account) or X API | REAL |
-| **Post to LinkedIn** | Headed Chrome (logged into your account) | REAL |
-| **Send emails** | Resend API (cold outreach) or Gmail via browser (personal) | REAL |
+| **Send cold emails** | Resend API (for contacts where Gmail feels too personal) | REAL |
+| **Take screenshots** | Playwright headless | REAL |
 | **Generate images** | Gemini nano-banana-pro skill | REAL |
-| **Generate PDFs** | HTML → PDF via Playwright | REAL |
+| **Generate PDFs** | HTML -> PDF via Playwright | REAL |
 | **Set reminders** | Local storage + Telegram scheduled message | REAL |
 | **Download JellyJelly videos** | ffmpeg + HLS stream from API | REAL |
 | **Enrich with NYC live data** | 311, traffic, weather, Citi Bike, MTA, restaurants | REAL |
@@ -436,11 +485,13 @@ Post the thread tonight, share the site tomorrow morning.
 
 ---
 
-## 9. Browser Automation (Headed Chrome)
+## 9. Browser Automation (Headed Chrome) — THE CORE
 
-### The Big Demo Feature
+### This Is the Entire Product
 
-Genie opens **real Chrome on your machine** and does things while you watch. This is not headless. You SEE the browser navigating, typing, clicking. It uses your logged-in sessions — your LinkedIn, your Gmail, your Twitter.
+Everything else — the firehose, the interpreter, the site builder — exists to feed the browser. The browser is Genie's hands. When Chrome opens by itself and starts navigating, typing, clicking, sending — that is the product. That is the demo. That is the "holy shit" moment.
+
+This is not headless. You SEE everything. It uses your logged-in sessions — your LinkedIn, your Gmail, your Twitter. The audience watches a possessed computer grant wishes in real time.
 
 ### Setup
 
@@ -456,7 +507,7 @@ const browser = await chromium.launchPersistentContext(
     headless: false,               // HEADED — you see everything
     channel: 'chrome',             // use system Chrome
     viewport: { width: 1280, height: 800 },
-    slowMo: 100,                   // slight delay so you can follow along
+    slowMo: 150,                   // slow enough for audience to follow
   }
 );
 ```
@@ -464,11 +515,62 @@ const browser = await chromium.launchPersistentContext(
 ### Pre-requisite: Login Once
 
 Before first use, run Genie's browser setup. It opens Chrome:
-1. Navigate to LinkedIn → log in manually → session saved
-2. Navigate to Gmail → log in manually → session saved
-3. Navigate to Twitter/X → log in manually → session saved
+1. Navigate to LinkedIn -> log in manually -> session saved
+2. Navigate to Gmail -> log in manually -> session saved
+3. Navigate to Twitter/X -> log in manually -> session saved
 
 After that, Genie can use all these services as you.
+
+### The Browser Cascade (Full Chain)
+
+Every wish triggers a visible cascade. Here is the full chain for a typical wish:
+
+```
+WISH: "Genie, organize an AI founders meetup in NYC"
+
+STEP 1 (background, 9s): Site deploys to Vercel. URL ready.
+
+STEP 2 (Chrome opens — audience watches):
+
+  Tab 1: JellyJelly Power User Discovery
+  ├── Navigate to JellyJelly search (or use API results in browser)
+  ├── Find top creators posting about AI / NYC / founders
+  ├── Extract 10 usernames + profile info
+  └── LLM generates personalized notes for each
+
+  Tab 2: Apollo Enrichment
+  ├── For each JellyJelly creator, hit Apollo API
+  ├── Get: email, LinkedIn URL, company, title
+  └── Display results in browser tab (visible enrichment)
+
+  Tab 3: LinkedIn Outreach
+  ├── Navigate to linkedin.com/search → "AI founders NYC"
+  ├── Open profile 1 → click Connect → add note:
+  │   "Hey [name], saw your JellyJelly clip about [topic].
+  │    Organizing an AI founders meetup — thought you'd be interested.
+  │    Details: [site URL]"
+  ├── Open profile 2 → repeat
+  ├── ... (5-8 connection requests, each visible)
+  └── Audience sees each request happen in real time
+
+  Tab 4: Gmail Sends
+  ├── Navigate to mail.google.com
+  ├── Click Compose → fill To: [enriched email]
+  ├── Subject: "AI Founders Meetup — You're Invited"
+  ├── Body: personalized, mentions their JellyJelly content
+  ├── Hit Send (visible)
+  ├── Compose next email → repeat
+  └── 3-5 real emails sent from YOUR Gmail account
+
+  Tab 5: Twitter Post
+  ├── Navigate to x.com/compose/post
+  ├── Type: "Organizing an AI founders meetup in NYC.
+  │          Built the site in 9 seconds. Invited 15 people.
+  │          All from a 30-second video. [URL]"
+  └── Click Post (visible)
+
+STEP 3: Telegram report with full receipts.
+```
 
 ### LinkedIn Actions
 
@@ -487,6 +589,17 @@ async function sendLinkedInConnection(page, { profileUrl, message }) {
   
   await page.click('button:has-text("Send")');
   return { success: true, profileUrl };
+}
+
+async function searchLinkedIn(page, { query, maxResults = 5 }) {
+  await page.goto(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}`);
+  await page.waitForSelector('.search-results-container');
+  
+  const profiles = await page.$$eval('.entity-result__title-text a', links =>
+    links.map(a => ({ name: a.textContent.trim(), url: a.href }))
+  );
+  
+  return profiles.slice(0, maxResults);
 }
 ```
 
@@ -523,6 +636,43 @@ async function postTweet(page, { text }) {
 }
 ```
 
+### JellyJelly Power User Discovery (Browser-Visible)
+
+```javascript
+async function discoverPowerUsers(page, { topic, maxUsers = 10 }) {
+  // 1. Hit JellyJelly search API for recent popular clips
+  const clips = await fetch(
+    `https://api.jellyjelly.com/v3/jelly/search?sort_by=likes&page_size=50`
+  ).then(r => r.json());
+  
+  // 2. LLM scores each clip's transcript for topic relevance
+  const scored = await scoreTranscripts(clips, topic);
+  
+  // 3. Extract unique creators, sorted by engagement
+  const creators = extractUniqueCreators(scored);
+  
+  // 4. Apollo enrich each creator
+  const enriched = [];
+  for (const creator of creators.slice(0, maxUsers)) {
+    const info = await apolloEnrich(creator.full_name, creator.username);
+    enriched.push({
+      ...creator,
+      email: info.email,
+      linkedInUrl: info.linkedin_url,
+      company: info.organization_name,
+      title: info.title,
+      jellyClipTopic: creator.relevantClipSummary, // for personalized outreach
+    });
+  }
+  
+  // 5. Show results in browser (optional: navigate to a results page)
+  await page.goto('about:blank');
+  await page.setContent(generateEnrichmentReport(enriched));
+  
+  return enriched;
+}
+```
+
 ### Why Headed Browser > APIs
 
 | API Approach | Browser Approach |
@@ -533,18 +683,21 @@ async function postTweet(page, { text }) {
 | Rate limited by API tier | Rate limited by human-speed browsing |
 | Invisible — user has no idea what's happening | **User WATCHES it happen in real time** |
 | Looks like any other API demo | **Looks like magic — Chrome moving by itself** |
+| You demo a JSON response | **You demo a possessed computer** |
 
-The headed browser IS the demo. Judges see Chrome open, navigate to LinkedIn, type a message, and hit send. That's the "holy shit" moment.
+The headed browser IS the product. The site deploy is a 9-second warmup. The browser cascade is the 60-second main act.
 
 ---
 
 ## 10. Genie UI (Live Status)
 
-### Design: Telegram-First + Optional Web Dashboard
+### The UI IS the Browser
 
-**Primary output: Telegram Bot**
+There is no dashboard. There is no web app. The headed Chrome IS the visual. When Genie works, the audience sees real websites navigating, real forms being filled, real buttons being clicked. That is more compelling than any dashboard could ever be.
 
-Genie sends you Telegram messages. You never send Genie messages. It's one-way:
+**Primary output: Telegram Bot + The Browser Itself**
+
+The browser is the live UI during execution. Telegram is the receipt after. You never send Genie messages. It's one-way:
 
 ```
 GENIE 🧞 [4:32 PM]
@@ -625,16 +778,9 @@ async function sendTelegramPhoto(photoPath, caption) {
 }
 ```
 
-### Optional: Live Web Dashboard
+### No Dashboard Needed
 
-A simple local web page that shows Genie's activity in real-time (for demo purposes):
-
-- **Left pane:** JellyJelly clip playing + transcript with highlighted keywords
-- **Center pane:** Live activity feed (each step as it happens)
-- **Right pane:** Results — deployed URLs, screenshots, sent messages
-- **Bottom:** Browser view embed showing Chrome actions
-- Built with Vite + React + Server-Sent Events from the Genie server
-- Runs on `localhost:5173` for demo projection
+The headed Chrome IS the visual. The audience watches real LinkedIn, real Gmail, real Twitter — not a custom UI pretending to show activity. The terminal shows logs. The browser shows actions. Telegram shows receipts. That is the entire UI.
 
 ---
 
@@ -776,55 +922,88 @@ Strategy: Zo free models for transcript interpretation. OpenRouter (Claude Sonne
 
 ### 0:00-0:20 — THE SETUP
 
-**Screen:** Split view. Left: JellyJelly firehose scrolling. Right: Terminal showing "Genie server running... listening for keyword..."
+**Screen:** Terminal showing "Genie server running... listening for keyword..."
 
-**Say:** "This is Genie. It watches every JellyJelly video in real-time. But it only wakes up when you say its name."
+**Say:** "This is Genie. It watches every JellyJelly video posted — thousands per day. When someone says its name, it wakes up. And then your computer becomes possessed."
 
-### 0:20-0:50 — THE WISH
+### 0:20-0:30 — THE WISH
 
-**Say:** "This morning, Iqram — the founder of JellyJelly — posted this."
-
-**Action:** Show iqram's clip. Transcript appears. The word "Genie" is never in it (he said "Wobbles"). 
-
-**Say:** "He asked his agent Wobbles to build a site. But what if he'd said Genie instead? Let me show you what happens."
-
-**Action:** Load a pre-recorded clip (or live clip) where someone says "Genie, build me a site for agentic social media."
-
-### 0:50-1:40 — THE GRANT (holy shit moment)
+**Action:** Play a pre-recorded JellyJelly clip: "Genie, I want to organize an AI founders meetup in NYC this week. Find people, invite them, make it happen."
 
 Terminal detects the keyword:
 ```
 [GENIE] Keyword detected in clip by @georgy
 [GENIE] Interpreting transcript...
-[GENIE] Proposal: "Agentic Social Media — Landing Page + Twitter Thread"
-[GENIE] Executing wish 1/2: BUILD...
+[GENIE] Proposal: "AI Founders NYC Meetup" — 5 actions queued
+[GENIE] Executing...
 ```
 
-Vercel URL appears in ~12 seconds. Click it. Real site loads.
+### 0:30-0:40 — THE SITE (fast, expected)
 
-Then: **Chrome opens on screen.** Navigates to Twitter. Composes a tweet about the site. Posts it.
+**Say:** "First — it builds."
 
-**Say:** "That's a real website and a real tweet. From a video clip. And I didn't touch my keyboard."
+Vercel URL appears in terminal in ~9 seconds. Click it. Real event page loads. Nice, but the audience has seen site generators before.
 
-### 1:40-2:10 — THE PROOF
+**Say:** "Cool. A site in 9 seconds. But that's not the demo. Watch my screen."
 
-Telegram notification pops up on phone. Full report with screenshots, URLs.
+### 0:40-0:55 — CHROME OPENS (the gasp)
 
-**Say:** "Genie sent me the receipt. Site URL, screenshot, tweet link. I just talked. Genie did everything."
+**Chrome opens BY ITSELF.** The audience sees it. No one is touching the keyboard.
 
-### 2:10-2:40 — THE BROWSER MOMENT
+Chrome navigates to LinkedIn. Searches "AI founders New York." Results load. Genie clicks on the first profile. Clicks "Connect." Types a personalized note: "Hey Sarah — saw your post about AI agents last week. Organizing a meetup for AI founders this Thursday in NYC. Would love to have you there." Clicks Send.
 
-**Say:** "But Genie can do more than deploy sites. Watch."
+Moves to the next profile. Repeat. **3 connection requests sent, each with a unique note.**
 
-Load a clip: "Genie, reach out to that CTO from the panel."
+**Say:** "Those are real LinkedIn requests. From my account. I'm not touching anything."
 
-Chrome opens. Navigates to LinkedIn. Finds the person. Sends a connection request with a personalized note.
+### 0:55-1:15 — GMAIL (the jaw drop)
 
-**Say:** "That's my real LinkedIn. Genie sent a real connection request. From a video."
+Chrome opens a new tab. Navigates to Gmail. Clicks Compose. Fills in an email address (from Apollo enrichment). Subject: "AI Founders Meetup — Thursday NYC." Body is personalized — mentions the recipient's company and their JellyJelly content. Hits Send.
+
+Composes another. Sends it. **2 real emails sent from George's Gmail.**
+
+**Say:** "Real emails. From my Gmail. Personalized with their company info and JellyJelly clips. Sent."
+
+### 1:15-1:30 — TWITTER (the exclamation point)
+
+Chrome opens Twitter. Types a tweet: "Organizing an AI founders meetup in NYC this Thursday. Built the site, invited 15 people, sent emails — all from a 30-second video clip. The future is voice-triggered agents. [URL] #AgenticSocialMedia"
+
+Clicks Post.
+
+**Say:** "Real tweet. Posted."
+
+### 1:30-1:45 — THE RECEIPT
+
+Telegram buzzes on phone. Hold it up. Full report:
+
+```
+GENIE REPORT
+- Site: https://ai-founders-nyc.vercel.app (deployed in 9s)
+- LinkedIn: 5 connection requests sent
+- Gmail: 3 personalized emails sent
+- Twitter: 1 tweet posted
+- Time: 74 seconds total
+```
+
+**Say:** "I recorded a 30-second video. Genie built a site, sent 5 LinkedIn requests, 3 emails, and a tweet. I didn't touch my keyboard. All from a JellyJelly clip."
+
+### 1:45-2:15 — AUDIENCE PARTICIPATION
+
+**Say:** "But don't take my word for it. Someone in this room — record a JellyJelly clip right now. Say 'Genie' and then say what you want. Your phone will buzz with results in 60 seconds."
+
+Someone in the crowd records a clip: "Genie, build me a portfolio site for my photography business."
+
+Terminal detects it. Site deploys. Chrome opens — updates their LinkedIn headline suggestion (shown on screen). Telegram buzzes on THEIR phone with the site URL and a screenshot.
+
+**Say:** "That was their wish. Granted live. From the audience."
+
+### 2:15-2:40 — THE FLYWHEEL
+
+**Say:** "Every time you post on JellyJelly, Genie learns more about you. Your fifth wish is smarter than your first. Your tenth wish — Genie starts reaching out to people on your behalf before you even ask. It doesn't just build. It networks. It promotes. It operates your entire digital presence from your voice."
 
 ### 2:40-3:00 — THE CLOSE
 
-**Say:** "Genie is agentic social media. You speak. It acts. It doesn't ask permission. It sends you what it did. The more you talk, the smarter it gets. You wished for it."
+**Say:** "Genie is agentic social media. You speak into JellyJelly. Your computer comes alive. Chrome opens. LinkedIn requests go out. Emails send. Tweets post. You get a receipt on Telegram. No keyboard. No prompts. No permission asked. You wished for it."
 
 ---
 
@@ -928,17 +1107,17 @@ An agent that has access to your browser, your LinkedIn, your Gmail — and it a
 
 ### Tier 1: MUST WORK
 
-**"Say Genie in a video → website deployed → Telegram report received"**
+**"Say Genie in a video → site deploys → Chrome opens and does visible actions → Telegram report received"**
 
-Requires: server + keyword detector + interpreter + build-site + deploy-vercel + Telegram bot. **The core magic.**
+Requires: server + keyword detector + interpreter + build-site + deploy-vercel + headed Playwright (LinkedIn OR Gmail OR Twitter — at least ONE visible browser action) + Telegram bot. **The browser cascade IS tier 1. Without it, we're just another site builder.**
 
 ### Tier 2: SHOULD WORK
 
-Tier 1 + headed Chrome doing LinkedIn/Gmail/Twitter actions visible on screen. **The wow factor.**
+Tier 1 + ALL THREE browser targets (LinkedIn + Gmail + Twitter in a single chain). Apollo enrichment feeding personalized notes. JellyJelly power user discovery. **The full cascade.**
 
 ### Tier 3: NICE TO HAVE
 
-Tier 2 + strategy layer, per-user memory personalization, live web dashboard, NYC feed integration, multi-wish from single clip.
+Tier 2 + strategy layer, per-user memory personalization, audience participation mode, NYC feed integration, multi-wish from single clip.
 
 ---
 
