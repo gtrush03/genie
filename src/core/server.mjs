@@ -76,9 +76,8 @@ const MAX_CONCURRENT = parseInt(process.env.GENIE_MAX_CONCURRENT || '5', 10);
 let activeDispatches = 0;
 const wishQueue = []; // overflow queue when at capacity
 
-function buildCommentText(result) {
+async function buildCommentText(result, clipTitle = '') {
   if (!result) return '🧞 Heard your wish — couldn\'t complete it. Check Telegram.';
-
   if (!result.success) return '🧞 Heard your wish — couldn\'t complete it. Check Telegram.';
 
   const text = result.result || '';
@@ -86,7 +85,7 @@ function buildCommentText(result) {
   // Extract ALL unique URLs from the result (deployed sites, tweets, payment links, etc.)
   const urlMatches = text.match(/https?:\/\/[^\s)>"'\]]+/g) || [];
   // Filter to the interesting ones — skip API/internal URLs
-  const outputUrls = [...new Set(urlMatches)].filter(u =>
+  let outputUrls = [...new Set(urlMatches)].filter(u =>
     u.includes('vercel.app') ||
     u.includes('x.com') || u.includes('twitter.com') ||
     u.includes('buy.stripe.com') ||
@@ -95,8 +94,31 @@ function buildCommentText(result) {
     u.includes('/status/')
   );
 
+  // Fallback: if no URLs in result text, check Vercel for the most recently deployed genie-* project
   if (outputUrls.length === 0) {
-    // No clean URLs found — try grabbing ANY non-API URL
+    try {
+      const { execSync } = await import('child_process');
+      const out = execSync('npx vercel project ls 2>/dev/null | head -5', { encoding: 'utf-8', timeout: 15000 });
+      const lines = out.split('\n');
+      for (const line of lines) {
+        const match = line.match(/(https:\/\/genie-[^\s]+\.vercel\.app)/);
+        if (match && match[1]) {
+          // Check if this project was updated in the last 10 minutes (likely from this wish)
+          const updatedMatch = line.match(/(\d+[smhd])\s/);
+          if (updatedMatch) {
+            const age = updatedMatch[1];
+            if (age.endsWith('s') || age.endsWith('m') || (age.endsWith('m') && parseInt(age) <= 10)) {
+              outputUrls.push(match[1]);
+              break;
+            }
+          }
+        }
+      }
+    } catch { /* Vercel check is best-effort */ }
+  }
+
+  // Still nothing? Try any non-API URL
+  if (outputUrls.length === 0) {
     const anyUrl = urlMatches.find(u =>
       !u.includes('api.telegram.org') &&
       !u.includes('api.jellyjelly.com') &&
@@ -109,7 +131,7 @@ function buildCommentText(result) {
 
   // Build a clean comment with all output links
   const lines = ['🧞 Wish granted!'];
-  for (const url of outputUrls.slice(0, 4)) { // max 4 links
+  for (const url of outputUrls.slice(0, 4)) {
     if (url.includes('x.com') || url.includes('twitter.com')) lines.push(`🐦 ${url}`);
     else if (url.includes('buy.stripe.com')) lines.push(`💳 ${url}`);
     else if (url.includes('ubereats.com')) lines.push(`🛒 ${url}`);
@@ -141,7 +163,7 @@ function runDispatch(clip) {
       // Comment on the original clip with results
       try {
         const { commentOnClip } = await import('./jelly-comment.mjs');
-        const commentText = buildCommentText(result);
+        const commentText = await buildCommentText(result, clipTitle);
         const commentResult = await commentOnClip(clipId, commentText);
         log('COMMENT', `Clip ${clipId}: method=${commentResult.method} success=${commentResult.success}`);
       } catch (err) {
