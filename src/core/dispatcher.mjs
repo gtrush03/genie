@@ -7,7 +7,7 @@
 // and full tool access. Stream-json events from the child are parsed live and
 // forwarded as Telegram status updates.
 
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -16,7 +16,12 @@ import { sendMessage } from './telegram.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../..');
-const CLAUDE_BIN = process.env.GENIE_CLAUDE_BIN || '/Users/gtrush/.local/bin/claude';
+// Find claude binary: env override → PATH lookup → common locations
+const CLAUDE_BIN = process.env.GENIE_CLAUDE_BIN
+  || (() => { try { return execSync('which claude', { encoding: 'utf-8' }).trim(); } catch { return null; } })()
+  || (existsSync('/usr/local/bin/claude') ? '/usr/local/bin/claude' : null)
+  || (existsSync(`${process.env.HOME}/.local/bin/claude`) ? `${process.env.HOME}/.local/bin/claude` : null)
+  || 'claude';
 const SYSTEM_PROMPT_PATH = resolve(REPO_ROOT, 'config/genie-system.md');
 const MCP_CONFIG_PATH = resolve(REPO_ROOT, 'config/mcp.json');
 // Hard timeout is a safety net against a truly stuck process, not a task time budget.

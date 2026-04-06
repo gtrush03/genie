@@ -67,14 +67,9 @@ sed "s|/Users/YOURNAME|$HOME|g; s|GENIE_REPO_DIR|$REPO_DIR|g; s|NODE_BIN|$NODE_B
 ```bash
 launchctl load -w ~/Library/LaunchAgents/com.genie.chrome.plist
 ```
-Wait 3 seconds, verify with `curl http://127.0.0.1:9222/json/version`.
+Wait 3 seconds, verify with `curl http://127.0.0.1:9222/json/version`. If that fails, wait 5 more seconds and retry — Chrome cold start can take 5-8s on first run.
 
-**If Genie server not running:** Start it:
-```bash
-launchctl load -w ~/Library/LaunchAgents/com.genie.server.plist
-```
-
-**If `.env` missing:** This is the ONE thing that requires the user. Create it from the template:
+**If `.env` missing:** This is the ONE thing that requires the user — AND it must happen BEFORE starting the server (the server crash-loops without TELEGRAM_BOT_TOKEN). Create it from the template:
 ```bash
 cp .env.example .env
 ```
@@ -93,6 +88,12 @@ source .env && curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN
   -d chat_id="${TELEGRAM_CHAT_ID}" -d text="🧞 Genie is alive on a new machine."
 ```
 If it works: "Telegram connected — check your phone." If not: "That token didn't work. Let's try again."
+
+**If Genie server not running (start AFTER .env is ready):**
+```bash
+launchctl load -w ~/Library/LaunchAgents/com.genie.server.plist
+```
+Wait 3 seconds, then verify with `tail -3 /tmp/genie-logs/launchd.out.log` — should show "Polling JellyJelly..." not crash messages.
 
 ### Step 4: Browser login prompt
 

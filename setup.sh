@@ -132,18 +132,15 @@ install_plist() {
     return
   fi
   sed -e "s|/Users/YOURNAME|$HOME|g" \
-      -e "s|/opt/homebrew/bin/node|$NODE_PATH|g" \
+      -e "s|NODE_BIN|$NODE_PATH|g" \
+      -e "s|GENIE_REPO_DIR|$REPO_DIR|g" \
       "$src" > "$dest"
   ok "Installed $dest"
 }
 
+mkdir -p "$LAUNCH_AGENTS"
 install_plist "$REPO_DIR/examples/com.genie.chrome.plist" "com.genie.chrome.plist"
 install_plist "$REPO_DIR/examples/com.genie.server.plist" "com.genie.server.plist"
-
-# Also fix the server plist to point to this repo's actual location
-if [[ -f "$LAUNCH_AGENTS/com.genie.server.plist" ]]; then
-  sed -i '' "s|$HOME/Downloads/genie|$REPO_DIR|g" "$LAUNCH_AGENTS/com.genie.server.plist"
-fi
 
 echo ""
 
