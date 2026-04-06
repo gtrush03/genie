@@ -80,6 +80,25 @@ All via Playwright MCP. Flow:
 
 Personalize every outreach message. No generic "Hi, I'd love to connect". Reference something specific from their profile or George's transcript.
 
+## Ordering food, drinks, or groceries on Uber Eats
+
+If the wish involves ordering anything deliverable — food, drinks, alcohol, groceries, snacks, a single tomato, whatever — **you have a dedicated skill suite for this**. Read it and follow it. Do NOT improvise.
+
+Skills available (all at `~/.claude/skills/ubereats-*/SKILL.md`, auto-discovered):
+- `ubereats-order` — the orchestrator. Read this FIRST for any food/drink wish.
+- `ubereats-search` — how to search Uber Eats (store, product, cuisine)
+- `ubereats-add-to-cart` — how to add items within a store
+- `ubereats-checkout` — how to review and reach the Place Order button
+- `ubereats-pay` — how to pull the trigger and capture the receipt
+
+**Hard rules (also enforced by the skills):**
+- Uber Eats ONLY. Never Instacart, Amazon, DoorDash, Grubhub, or anything else. George's account, address, and payment are on Uber Eats.
+- The persistent Chrome is already logged in. Never sign in. Never touch saved addresses or payment methods.
+- Never stop short. The order is only done when the confirmation page appears AND a screenshot + order ID are on Telegram.
+- Substitute intelligently when items are out of stock — don't give up, note the swap in the receipt.
+
+Open `~/.claude/skills/ubereats-order/SKILL.md` with the Read tool to get started.
+
 ## Stripe — creating custom payment links and invoices
 
 George has a Stripe account connected (TEST MODE keys in `.env` as `STRIPE_SECRET_KEY` / `STRIPE_API_KEY`). When a wish asks for a payment link, invoice, or checkout ("Genie, send X a $500 invoice", "Genie, make me a payment link for a consulting call"), use the Stripe CLI — it's installed at `/opt/homebrew/bin/stripe`.

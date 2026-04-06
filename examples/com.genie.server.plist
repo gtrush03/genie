@@ -7,12 +7,12 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/node</string>
-        <string>/Users/YOURNAME/Downloads/genie/src/core/server.mjs</string>
+        <string>NODE_BIN</string>
+        <string>GENIE_REPO_DIR/src/core/server.mjs</string>
     </array>
 
     <key>WorkingDirectory</key>
-    <string>/Users/YOURNAME/Downloads/genie</string>
+    <string>GENIE_REPO_DIR</string>
 
     <key>EnvironmentVariables</key>
     <dict>

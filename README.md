@@ -228,9 +228,22 @@ genie/
 
 ---
 
-## ⚙️ Setup
+## Quick Start (one-click)
 
-### Prerequisites
+```bash
+git clone https://github.com/gtrush03/genie.git
+cd genie
+bash setup.sh
+```
+
+The setup script handles everything: dependencies, Chrome with CDP, LaunchAgents, Claude Code permissions, Uber Eats skills, and account logins. Takes ~5 minutes including login time.
+
+### Manual setup
+
+<details>
+<summary>Click to expand manual steps</summary>
+
+#### Prerequisites
 
 - macOS (launchd + Chrome CDP patterns are macOS-specific; Linux port is trivial via systemd)
 - Node ≥ 20
@@ -240,7 +253,7 @@ genie/
 - Vercel CLI — logged in (`npx vercel login`)
 - A Telegram bot + your chat ID (create via [@BotFather](https://t.me/botfather))
 
-### 1. Clone + install
+#### 1. Clone + install
 
 ```bash
 git clone https://github.com/gtrush03/genie.git
@@ -248,14 +261,14 @@ cd genie
 npm install
 ```
 
-### 2. Configure
+#### 2. Configure
 
 ```bash
 cp .env.example .env
 $EDITOR .env   # fill in all the keys
 ```
 
-### 3. Start the persistent browser (one-time)
+#### 3. Start the persistent browser (one-time)
 
 ```bash
 cp examples/com.genie.chrome.plist ~/Library/LaunchAgents/com.genie.chrome.plist
@@ -265,7 +278,7 @@ curl http://127.0.0.1:9222/json/version   # should return Chrome info
 
 Then visit the Chrome window that opens and log into every site you want Genie to use — LinkedIn, X, Gmail, Vercel, GitHub, Stripe. **Check "Keep me signed in" on every login.** See [docs/BROWSER-SETUP.md](docs/BROWSER-SETUP.md) for details.
 
-### 4. Start the Genie server (always-on)
+#### 4. Start the Genie server (always-on)
 
 ```bash
 cp examples/com.genie.server.plist ~/Library/LaunchAgents/com.genie.server.plist
@@ -273,9 +286,11 @@ launchctl load -w ~/Library/LaunchAgents/com.genie.server.plist
 tail -f /tmp/genie-logs/launchd.out.log
 ```
 
-### 5. Make a wish
+#### 5. Make a wish
 
 Open JellyJelly, record a clip, say *"Genie, ..."* and watch Telegram.
+
+</details>
 
 ---
 
@@ -323,6 +338,20 @@ Claude Code replays the full prior conversation and picks up with its tool histo
 - The persistent Chrome profile at `~/.genie/browser-profile` holds session cookies for every site you log into. Protect it like you would your password manager.
 - The dispatcher runs `claude -p` with `--permission-mode bypassPermissions`. This is autonomous mode — Claude Code can run any `Bash` or write any file within `--add-dir`. The `--add-dir` is scoped to the genie repo, but `Bash` has process-level access. Only run Genie on a machine you control.
 - Telegram is the only outbound channel. If a wish ever does something unexpected, you'll see it there first.
+
+---
+
+## Continuing from a prior session
+
+If you're picking up Genie development from a previous Claude Code session, read [CONTEXT-DROP.md](./CONTEXT-DROP.md) — it contains the full architecture, every decision, bugs fixed, and conversation arc.
+
+---
+
+## Research
+
+Two deep-dive briefs on productizing Genie as a JellyJelly feature:
+- [Product + Integration Brief](docs/research/product-brief.md) — competitive landscape, pricing models, GTM, risks
+- [Infrastructure + Hosting Brief](docs/research/hosting-brief.md) — Browserbase, Agent SDK, Modal, per-wish cost model at scale
 
 ---
 
