@@ -76,6 +76,18 @@ const MAX_CONCURRENT = parseInt(process.env.GENIE_MAX_CONCURRENT || '5', 10);
 let activeDispatches = 0;
 const wishQueue = []; // overflow queue when at capacity
 
+function buildCommentText(result) {
+  if (!result) return '🧞 Heard your wish — couldn\'t complete it. Check Telegram.';
+  if (result.success && result.result) {
+    // Try to extract a URL from the result text
+    const urlMatch = result.result.match(/https?:\/\/[^\s)>"]+/);
+    if (urlMatch) return `🧞 Wish granted! ${urlMatch[0]}`;
+    return '🧞 Done! Check Telegram for the full report.';
+  }
+  if (result.success) return '🧞 Done! Check Telegram for the full report.';
+  return '🧞 Heard your wish — couldn\'t complete it. Check Telegram.';
+}
+
 function drainQueue() {
   while (wishQueue.length > 0 && activeDispatches < MAX_CONCURRENT) {
     const next = wishQueue.shift();
@@ -93,8 +105,18 @@ function runDispatch(clip) {
   log('EXEC', `Dispatching clip ${clipId} by @${creator} (${activeDispatches}/${MAX_CONCURRENT} active)`);
 
   dispatchToClaude({ transcript, clipTitle, creator, clipId, keyword: KEYWORD })
-    .then(result => {
+    .then(async (result) => {
       log('EXEC', `Clip ${clipId} done: success=${result.success} turns=${result.turns} cost=$${result.usdCost ?? 0} in ${(result.durationMs / 1000).toFixed(1)}s`);
+
+      // Comment on the original clip with results
+      try {
+        const { commentOnClip } = await import('./jelly-comment.mjs');
+        const commentText = buildCommentText(result);
+        const commentResult = await commentOnClip(clipId, commentText);
+        log('COMMENT', `Clip ${clipId}: method=${commentResult.method} success=${commentResult.success}`);
+      } catch (err) {
+        log('COMMENT', `Failed to comment on ${clipId}: ${err.message}`);
+      }
     })
     .catch(err => {
       log('EXEC', `Clip ${clipId} threw: ${err.message}`);

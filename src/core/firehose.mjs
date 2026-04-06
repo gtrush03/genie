@@ -137,10 +137,19 @@ export function reconstructTranscript(transcriptOverlay) {
  * @param {string} keyword - Keyword to search for (case-insensitive)
  * @returns {boolean}
  */
+// Fuzzy variants Deepgram commonly produces for "genie"
+const GENIE_VARIANTS = new Set([
+  'genie', 'jeanie', 'jeannie', 'jeany', 'jenie', 'jennie', 'jenny',
+  'geeney', 'geenie', 'geany', 'geaney', 'jeaney', 'genee', 'gennie',
+  'ginny', 'gini', 'jini', 'djinni', 'djinn', 'jinni', 'jinn',
+]);
+
 export function containsKeyword(transcriptOverlay, keyword) {
   if (!transcriptOverlay || !keyword) return false;
 
   const target = keyword.toLowerCase();
+  // Build match set: exact keyword + fuzzy variants if keyword is "genie"
+  const matchSet = target === 'genie' ? GENIE_VARIANTS : new Set([target]);
 
   try {
     const results = transcriptOverlay.results;
@@ -152,11 +161,11 @@ export function containsKeyword(transcriptOverlay, keyword) {
         if (!alt.words) continue;
         for (const w of alt.words) {
           // Check the raw word field
-          if (w.word && w.word.toLowerCase() === target) return true;
+          if (w.word && matchSet.has(w.word.toLowerCase())) return true;
           // Check punctuated_word — strip trailing punctuation for comparison
           if (w.punctuated_word) {
             const cleaned = w.punctuated_word.replace(/[.,!?;:'"]+$/g, '').toLowerCase();
-            if (cleaned === target) return true;
+            if (matchSet.has(cleaned)) return true;
           }
         }
       }
