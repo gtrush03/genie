@@ -100,24 +100,44 @@ Wait 3 seconds, then verify with `tail -3 /tmp/genie-logs/launchd.out.log` — s
 Once Chrome CDP is live, tell the user:
 ```
 A Chrome window has opened — that's the Genie browser.
-Log into these sites (check "Keep me signed in" on each):
-  1. x.com
-  2. linkedin.com
-  3. mail.google.com
-  4. ubereats.com
-  5. vercel.com
-  6. github.com
-  7. dashboard.stripe.com
+I've opened all the login pages as tabs. Log into each one
+(check "Keep me signed in" on every site):
 
+  1. X (Twitter)
+  2. LinkedIn
+  3. Gmail
+  4. Uber Eats
+  5. Vercel
+  6. GitHub
+  7. Stripe
+  8. OpenTable (restaurant reservations)
+  9. Airbnb (travel)
+  10. Calendly (scheduling)
+  11. Venmo (payments)
+  12. Notion (docs/workspace)
+
+Skip any you don't use — Genie works with whatever's logged in.
 Tell me when you're done.
 ```
 
-You can open the login pages for them directly via CDP:
+Open ALL login pages for them in one shot via CDP:
 ```bash
-curl -s -X PUT "http://127.0.0.1:9222/json/new?https://x.com/i/flow/login"
-curl -s -X PUT "http://127.0.0.1:9222/json/new?https://www.linkedin.com/login"
-curl -s -X PUT "http://127.0.0.1:9222/json/new?https://accounts.google.com"
-curl -s -X PUT "http://127.0.0.1:9222/json/new?https://www.ubereats.com"
+for url in \
+  "https://x.com/i/flow/login" \
+  "https://www.linkedin.com/login" \
+  "https://accounts.google.com" \
+  "https://www.ubereats.com" \
+  "https://vercel.com/login" \
+  "https://github.com/login" \
+  "https://dashboard.stripe.com/login" \
+  "https://www.opentable.com/sign-in" \
+  "https://www.airbnb.com/login" \
+  "https://calendly.com/login" \
+  "https://account.venmo.com/sign-in" \
+  "https://www.notion.so/login"; do
+  curl -s -X PUT "http://127.0.0.1:9222/json/new?$url" > /dev/null &
+done
+wait
 ```
 
 ### Step 5: Final verification
