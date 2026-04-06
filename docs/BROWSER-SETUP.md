@@ -6,10 +6,10 @@ OAuth sessions, 2FA trust, and logged-in tabs persist across reboots. A spawned
 `claude -p` subprocess attaches to this Chrome through the `@playwright/mcp`
 MCP server (stdio) using `--cdp-endpoint http://127.0.0.1:9222`.
 
-- Profile dir: `/Users/gtrush/.genie/browser-profile`
+- Profile dir: `~/.genie/browser-profile`
 - LaunchAgent plist: `~/Library/LaunchAgents/com.genie.chrome.plist`
-- MCP config: `/Users/gtrush/Downloads/genie/config/mcp.json`
-- Helper script: `/Users/gtrush/Downloads/genie/scripts/start-browser.sh`
+- MCP config: `config/mcp.json`
+- Helper script: `scripts/start-browser.sh`
 - Logs: `/tmp/genie-logs/chrome.out.log`, `/tmp/genie-logs/chrome.err.log`
 
 This Chrome runs as a **separate instance** from your main daily Chrome — they
@@ -75,7 +75,7 @@ the menu, launchd will NOT relaunch it (expected; use `start-browser.sh load`).
 
 ```bash
 claude -p "Open the current tab, take a snapshot, and print the page title and URL" \
-  --mcp-config /Users/gtrush/Downloads/genie/config/mcp.json \
+  --mcp-config config/mcp.json \
   --allowedTools "mcp__playwright__*" \
   --permission-mode bypassPermissions \
   --output-format text
@@ -92,7 +92,7 @@ spawning a new Chrome window.
 lsof -nP -iTCP:9222 -sTCP:LISTEN
 ```
 
-If the PID belongs to a Chrome using `--user-data-dir=/Users/gtrush/.genie/browser-profile`,
+If the PID belongs to a Chrome using `--user-data-dir=~/.genie/browser-profile`,
 that's our own launchd instance — leave it alone. If it's a different process
 (an old playwright run, a ChromeDriver, etc.), kill it:
 
@@ -109,9 +109,9 @@ Fix:
 
 ```bash
 scripts/start-browser.sh unload
-rm -f /Users/gtrush/.genie/browser-profile/SingletonLock \
-      /Users/gtrush/.genie/browser-profile/SingletonSocket \
-      /Users/gtrush/.genie/browser-profile/SingletonCookie
+rm -f ~/.genie/browser-profile/SingletonLock \
+      ~/.genie/browser-profile/SingletonSocket \
+      ~/.genie/browser-profile/SingletonCookie
 scripts/start-browser.sh load
 ```
 
@@ -155,5 +155,5 @@ Your **daily-driver Chrome** (the one on the default profile) is untouched by
 all of this — it lives under `~/Library/Application Support/Google/Chrome`,
 not `~/.genie/browser-profile`, and does not use port 9222. You can run both
 simultaneously. `start-browser.sh` only kills Chromes whose command line
-contains `user-data-dir=/Users/gtrush/.genie/browser-profile` or the legacy
-`user-data-dir=/Users/gtrush/.genie-chrome-cdp` — never the default profile.
+contains `user-data-dir=~/.genie/browser-profile` or the legacy
+`user-data-dir=~/.genie-chrome-cdp` — never the default profile.

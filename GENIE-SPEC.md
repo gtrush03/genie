@@ -502,7 +502,7 @@ const { chromium } = require('playwright');
 
 // Launch headed Chrome with your existing profile
 const browser = await chromium.launchPersistentContext(
-  '/Users/gtrush/.genie/browser-profile', // persistent profile dir
+  '~/.genie/browser-profile', // persistent profile dir
   {
     headless: false,               // HEADED — you see everything
     channel: 'chrome',             // use system Chrome
@@ -881,7 +881,7 @@ Returns EVERYTHING:
 - X API v2 (500 posts/month free, OAuth 1.0a)
 
 ### Gemini Engine (Local)
-- `/Users/gtrush/Downloads/NYC/gemini-engine/gemini.sh`
+- `~/Downloads/NYC/gemini-engine/gemini.sh`
 - `gemini-code.sh` for code generation
 - Model: gemini-3.1-pro-preview
 
@@ -1160,7 +1160,7 @@ ZO_API_KEY=
 ZO_BASE_URL=https://api.zo.computer
 
 # Browser
-GENIE_BROWSER_PROFILE=/Users/gtrush/.genie/browser-profile
+GENIE_BROWSER_PROFILE=~/.genie/browser-profile
 GENIE_HEADED=true
 GENIE_SLOW_MO=100
 

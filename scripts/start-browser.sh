@@ -9,9 +9,9 @@
 #   scripts/start-browser.sh logs      # tail chrome logs
 set -euo pipefail
 
-PLIST_SRC="/Users/gtrush/Library/LaunchAgents/com.genie.chrome.plist"
+PLIST_SRC="$HOME/Library/LaunchAgents/com.genie.chrome.plist"
 LABEL="com.genie.chrome"
-PROFILE="/Users/gtrush/.genie/browser-profile"
+PROFILE="$HOME/.genie/browser-profile"
 CDP_URL="http://127.0.0.1:9222/json/version"
 
 ensure_dirs() {
@@ -32,12 +32,12 @@ kill_conflicting_chrome() {
   fi
   # Also kill stray CDP Chrome on .genie-chrome-cdp (old path from prior runs)
   local stray
-  stray=$(pgrep -f "user-data-dir=/Users/gtrush/.genie-chrome-cdp" || true)
+  stray=$(pgrep -f "user-data-dir=$HOME/.genie-chrome-cdp" || true)
   if [[ -n "${stray:-}" ]]; then
     echo "killing legacy CDP Chrome on .genie-chrome-cdp: $stray"
     kill $stray 2>/dev/null || true
     sleep 1
-    stray=$(pgrep -f "user-data-dir=/Users/gtrush/.genie-chrome-cdp" || true)
+    stray=$(pgrep -f "user-data-dir=$HOME/.genie-chrome-cdp" || true)
     [[ -n "${stray:-}" ]] && kill -9 $stray 2>/dev/null || true
   fi
 }

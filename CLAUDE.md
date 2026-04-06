@@ -52,7 +52,7 @@ cp -r skills/ubereats-* ~/.claude/skills/ 2>/dev/null
 ```bash
 NODE_BIN=$(which node)
 REPO_DIR=$(pwd)
-mkdir -p ~/.genie/browser-profile /tmp/genie-logs
+mkdir -p ~/.genie/browser-profile /tmp/genie-logs ~/Library/LaunchAgents
 
 # Chrome plist
 sed "s|/Users/YOURNAME|$HOME|g; s|GENIE_REPO_DIR|$REPO_DIR|g; s|NODE_BIN|$NODE_BIN|g" \
