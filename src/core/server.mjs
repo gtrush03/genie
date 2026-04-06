@@ -71,32 +71,59 @@ function log(tag, msg) {
   console.log(`[${ts}] [GENIE] [${tag}] ${msg}`);
 }
 
-// ─── Executor ─────────────────────────────────────────────────────────────────
-async function executeGenieAction(clip) {
+// ─── Concurrent dispatch ─────────────────────────────────────────────────────
+const MAX_CONCURRENT = parseInt(process.env.GENIE_MAX_CONCURRENT || '5', 10);
+let activeDispatches = 0;
+const wishQueue = []; // overflow queue when at capacity
+
+function drainQueue() {
+  while (wishQueue.length > 0 && activeDispatches < MAX_CONCURRENT) {
+    const next = wishQueue.shift();
+    runDispatch(next);
+  }
+}
+
+function runDispatch(clip) {
+  activeDispatches++;
   const clipId = clip.id || clip.ulid || 'unknown';
   const creator = clip.creator?.username || clip.username || 'unknown';
   const transcript = clip._transcript || reconstructTranscript(clip.transcript_overlay) || '';
   const clipTitle = clip.title || clip.description || `Clip ${clipId}`;
 
+  log('EXEC', `Dispatching clip ${clipId} by @${creator} (${activeDispatches}/${MAX_CONCURRENT} active)`);
+
+  dispatchToClaude({ transcript, clipTitle, creator, clipId, keyword: KEYWORD })
+    .then(result => {
+      log('EXEC', `Clip ${clipId} done: success=${result.success} turns=${result.turns} cost=$${result.usdCost ?? 0} in ${(result.durationMs / 1000).toFixed(1)}s`);
+    })
+    .catch(err => {
+      log('EXEC', `Clip ${clipId} threw: ${err.message}`);
+      sendMessage(`\u274C Genie error on "${clipTitle}": ${err.message}`).catch(() => {});
+    })
+    .finally(() => {
+      activeDispatches--;
+      drainQueue();
+    });
+}
+
+async function executeGenieAction(clip) {
+  const clipId = clip.id || clip.ulid || 'unknown';
+  const creator = clip.creator?.username || clip.username || 'unknown';
+  const clipTitle = clip.title || clip.description || `Clip ${clipId}`;
+  const transcript = clip._transcript || reconstructTranscript(clip.transcript_overlay) || '';
+
   log('EXEC', `Keyword "${KEYWORD}" detected in clip ${clipId}!`);
-  log('EXEC', `  Creator: ${creator}`);
+  log('EXEC', `  Creator: @${creator}`);
   log('EXEC', `  Transcript: ${transcript.slice(0, 200)}`);
 
   await sendMessage(`\u{1F9DE} Genie heard "${KEYWORD}" in "${clipTitle}" by @${creator}. Spawning Claude Code…`);
 
-  // Dispatch to a spawned Claude Code subprocess — it IS the execution engine now.
-  try {
-    const result = await dispatchToClaude({
-      transcript,
-      clipTitle,
-      creator,
-      clipId,
-      keyword: KEYWORD,
-    });
-    log('EXEC', `Dispatcher returned success=${result.success} turns=${result.turns} cost=$${result.usdCost ?? 0} in ${(result.durationMs / 1000).toFixed(1)}s`);
-  } catch (err) {
-    log('EXEC', `Dispatcher threw: ${err.message}`);
-    await sendMessage(`\u274C Genie dispatcher error: ${err.message}`);
+  if (activeDispatches >= MAX_CONCURRENT) {
+    log('QUEUE', `${activeDispatches} wishes active, queuing clip ${clipId}`);
+    await sendMessage(`\u23F3 Genie is busy (${activeDispatches} active). "${clipTitle}" queued — it'll run next.`);
+    wishQueue.push(clip);
+  } else {
+    runDispatch(clip);
   }
 }
 
