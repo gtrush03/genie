@@ -78,14 +78,44 @@ const wishQueue = []; // overflow queue when at capacity
 
 function buildCommentText(result) {
   if (!result) return '🧞 Heard your wish — couldn\'t complete it. Check Telegram.';
-  if (result.success && result.result) {
-    // Try to extract a URL from the result text
-    const urlMatch = result.result.match(/https?:\/\/[^\s)>"]+/);
-    if (urlMatch) return `🧞 Wish granted! ${urlMatch[0]}`;
+
+  if (!result.success) return '🧞 Heard your wish — couldn\'t complete it. Check Telegram.';
+
+  const text = result.result || '';
+
+  // Extract ALL unique URLs from the result (deployed sites, tweets, payment links, etc.)
+  const urlMatches = text.match(/https?:\/\/[^\s)>"'\]]+/g) || [];
+  // Filter to the interesting ones — skip API/internal URLs
+  const outputUrls = [...new Set(urlMatches)].filter(u =>
+    u.includes('vercel.app') ||
+    u.includes('x.com') || u.includes('twitter.com') ||
+    u.includes('buy.stripe.com') ||
+    u.includes('ubereats.com/orders') ||
+    u.includes('genie-') ||
+    u.includes('/status/')
+  );
+
+  if (outputUrls.length === 0) {
+    // No clean URLs found — try grabbing ANY non-API URL
+    const anyUrl = urlMatches.find(u =>
+      !u.includes('api.telegram.org') &&
+      !u.includes('api.jellyjelly.com') &&
+      !u.includes('openrouter.ai') &&
+      !u.includes('127.0.0.1')
+    );
+    if (anyUrl) return `🧞 Wish granted!\n${anyUrl}`;
     return '🧞 Done! Check Telegram for the full report.';
   }
-  if (result.success) return '🧞 Done! Check Telegram for the full report.';
-  return '🧞 Heard your wish — couldn\'t complete it. Check Telegram.';
+
+  // Build a clean comment with all output links
+  const lines = ['🧞 Wish granted!'];
+  for (const url of outputUrls.slice(0, 4)) { // max 4 links
+    if (url.includes('x.com') || url.includes('twitter.com')) lines.push(`🐦 ${url}`);
+    else if (url.includes('buy.stripe.com')) lines.push(`💳 ${url}`);
+    else if (url.includes('ubereats.com')) lines.push(`🛒 ${url}`);
+    else lines.push(`🔗 ${url}`);
+  }
+  return lines.join('\n');
 }
 
 function drainQueue() {
